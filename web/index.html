@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="ubuntudocker-mit-apache-webserver">Ubuntu/Docker mit Apache Webserver</h1>
+<h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
+<ul>
+<li>Übersicht</li>
+<li>Beschreibung</li>
+<li>Installation</li>
+<li>Dockerfile</li>
+<li>Testfälle</li>
+<li>Quellenverzeichnis</li>
+</ul>
+<h2 id="übersicht">Übersicht</h2>
+<pre><code>    +---------------------------------------------------------------+
+    !                                                               !	
+    !    +-------------------------+                                !
+    !    ! Apache Web-Server       !                                !       
+    !    ! Port: 80                !                                !       
+    !    ! Volume: /var/www/html   !                                !       
+    !    +-------------------------+                                !
+    !                                                               !	
+    ! Container                                                     !	
+    +---------------------------------------------------------------+
+    ! Container-Engine: Docker                                      !	
+    +---------------------------------------------------------------+
+    ! Gast OS: Ubuntu 16.04                                         !	
+    +---------------------------------------------------------------+
+    ! Hypervisor: VirtualBox                                        !	
+    +---------------------------------------------------------------+
+    ! Host-OS: Windows (Mac und Linux sollte auch funktionieren)    !	
+    +---------------------------------------------------------------+
+</code></pre>
+<h2 id="beschreibung">Beschreibung</h2>
+<p>Ein Apache Webserver Container für Docker auf Ubuntu. Es wird die Ubuntu Version 14.04 verwendet. Der Apache Webserver startet automatisch, sobald der Container gestartet wird. Auf dem Container ist der Port 80 geöffnet.<br>
+Das <code>index.html</code> File unter <code>root/web</code> kann ersetzt werden.</p>
+<h2 id="installation">Installation</h2>
+<p>Wenn die Ubuntu Installation mit Docker vorhanden ist, kann das Projektverzeichnis auf diese Instanz kopiert werden. Dazu kann FTP, SCP, oder z.B. auch RSYNC verwendet werden.<br>
+Mit folgendem Befehl in das Verzeichnis wechseln</p>
+<pre><code>$ cd /apachecontainer
+</code></pre>
+<blockquote>
+<p><strong>Hinweis:</strong> Der Pfad muss eventuell noch angepasst werden</p>
+</blockquote>
+<p>Mit folgendem Befehl den Container aus dem Dockerfile erstellen</p>
+<pre><code>$ docker build -t apache . 
+</code></pre>
+<p>Dann mit folgendem Befehl den soeben erstellten Container starten</p>
+<pre><code>$ docker run --rm -d -p 8080:80 -v `pwd`/web:/var/www/html --name apache apache
+</code></pre>
+<p>Nun sollte die Webseite mit der IP der VM unter Port 8080 aufrufbar sein. Falls dies nicht der Fall ist, liegt ein Fehler in der Netzwerkkonfiguration der VM vor.</p>
+<h2 id="dockerfile">Dockerfile</h2>
+<p>Hier werden die einzelnen Befehle im Dockerfile erklärt</p>
+<pre><code>FROM ubuntu:14.04
+</code></pre>
+<p>Beschreibt das Basisimage, welches die Grundlage für das neu erstellte Image bildet.</p>
+<h1 id="section"></h1>
+<pre><code>MAINTAINER Marcel mc-b Bernet &lt;marcel.bernet@ch-open.ch&gt;
+</code></pre>
+<p>Mit diesem Befehl wird der Autor des Images gesetzt. Da ich persönlich keine Änderungen an diesem File vorgenommen habe, habe ich den Autor nicht geändert.</p>
+<h1 id="section-1"></h1>
+<pre><code>RUN apt-get update
+</code></pre>
+<p>Der Befehl <code>RUN</code> führt den gegebenen Parameter einfach als Shell Befehl aus.<br>
+Diese Zeile kontrolliert, ob ein Update zur Verfügung steht und falls dies der Fall ist, wird es auch gleich ausgeführt.</p>
+<h1 id="section-2"></h1>
+<pre><code>RUN apt-get -q -y install apache2
+</code></pre>
+<p>Hier wird der Apache Webserver, genauer gesagt das Paket <code>apache2</code> installiert.<br>
+Die Option <code>-q</code> steht für quiet, welcher dafür sorgt, dass der Output während der Installation für Logging geeignet ist.<br>
+Die Option <code>-y</code> bestätigt automatisch alle Aufforderungen, welche eine weiter Benutzerhandlung erfordern.</p>
+<h1 id="section-3"></h1>
+<pre><code>ENV APACHE_RUN_USER www-data
+</code></pre>
+<p>Der Befehl <code>ENV</code> setzt eine Environment Variabel auf einen gewissen Wert. Die Variabel und der Wert werden nach dem Befehl angegeben.<br>
+In diesem Fall wird der Apache User auf <code>www-data</code> gesetzt.</p>
+<h1 id="section-4"></h1>
+<pre><code>ENV APACHE_RUN_GROUP www-data
+</code></pre>
+<p>In dieser Zeile wird die Apache Gruppe auf <code>www-data</code> gesetzt.</p>
+<h1 id="section-5"></h1>
+<pre><code>ENV APACHE_LOG_DIR /var/log/apache2
+</code></pre>
+<p>Hier wird das Log Verzeichnis vom Apache Webserver auf <code>/var/log/apache2</code> gesetzt.</p>
+<h1 id="section-6"></h1>
+<pre><code>RUN mkdir -p /var/lock/apache2 /var/run/apache2
+</code></pre>
+<p>Auf dieser Zeile werden mit dem <code>mkdir</code> Befehl zwei Verzeichnisse erstellt.<br>
+Die Option <code>-p</code> besagt, dass fehlende höhere Verzeichnisse ebenfalls erstellt werden sollen.</p>
+<pre><code>EXPOSE 80
+</code></pre>
+<p>Mit dem Befehl <code>EXPOSE</code> kann ein Port definiert werden, welcher auf dem Container geöffnet werden soll.<br>
+In diesem Fall wurde der Port 80 geöffnet.</p>
+<pre><code>VOLUME /var/www/html
+</code></pre>
+<p>Mit dem Befehl <code>VOLUME</code> könne Mountpoints für externe Volumes erstellt werden.<br>
+Hier wurde ein Mountpoint und <code>/var/www/html</code> erstellt.</p>
+<pre><code>CMD /bin/bash -c "source /etc/apache2/envvars &amp;&amp; exec /usr/sbin/apache2 -DFOREGROUND"
+</code></pre>
+<p>Der Befehl <code>CMD</code> definiert Standards für einen Container. Diese Standards können Scripts enthalten, welche ausgeführt werden.<br>
+In diesem Fall wurde ein Script definiert, welches den Webserver automatisch startet, sobald der Container gestartet wird.</p>
+<h2 id="testfälle">Testfälle</h2>
+<p>Ich habe alle folgenden Tests auf meinem System durchgeführt. Diese können auch als Kontrolle verwendet werden, ob der Container wie gewollt funktioniert.</p>
+
+<table>
+<thead>
+<tr>
+<th>Nr.</th>
+<th>Test</th>
+<th>Erwartetes Verhalten</th>
+<th>Tatsächliches Verhalten</th>
+<th>Test erfolgreich?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Zugriff auf Webseite von Docker Host mit Curl</td>
+<td>Der Inhalt der Webseite wird angezeigt</td>
+<td>Der Inhalt der Webseite wird angezeigt</td>
+<td>Ja</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Zugriff auf Webseite von Windows Host mit Curl</td>
+<td>Der Inhalt der Webseite wird angezeigt</td>
+<td>Der Inhalt der Webseite wird angezeigt</td>
+<td>Ja</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Zugriff auf Webseite von Windows Host im Browser</td>
+<td>Die Webseite wird angezeigt</td>
+<td>Die Webseite wird angezeigt</td>
+<td>Ja</td>
+</tr>
+</tbody>
+</table><h2 id="quellenverzeichnis">Quellenverzeichnis</h2>
+<p><strong>Quelle 1</strong><br>
+Halprin: Dockerfile - <a href="http://kapeli.com">kapeli.com</a><br>
+<a href="https://kapeli.com/cheat_sheets/Dockerfile.docset/Contents/Resources/Documents/index">https://kapeli.com/cheat_sheets/Dockerfile.docset/Contents/Resources/Documents/index</a><br>
+[Abrufdatum: 07.05.2020]<br>
+<strong>Quelle 2</strong><br>
+Autor: Linux man pages - <a href="http://linux.die.net">linux.die.net</a><br>
+<a href="https://linux.die.net/man/">https://linux.die.net/man/</a><br>
+[Abrufdatum: 07.05.2020]</p>
+<pre><code>Titel: Ubuntu/Docker mit Apache Webserver
+Autor: Nando Rigonalli 
+Datum: 07.05.2020
+</code></pre>
+</div>
+</body>
+
+</html>
